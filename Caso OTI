@@ -1,1 +1,290 @@
 
+# SISTEMA OTI 
+class Persona:
+    def __init__(self, dni, nombres, apellidos):
+        self._dni = dni
+        self._nombres = nombres
+        self._apellidos = apellidos
+
+    def ver_nombre_completo(self):
+        return f"{self._nombres} {self._apellidos}"
+
+    def consultar_rol(self):
+        raise NotImplementedError("La subclase debe definir el rol.")
+
+class Estudiante(Persona):
+    def __init__(self, dni, nombres, apellidos, carnet_estudiante, cod_escuela):
+        super().__init__(dni, nombres, apellidos)
+        self.carnet_estudiante = carnet_estudiante
+        self.cod_escuela = cod_escuela
+
+    def consultar_rol(self):
+        return "Estudiante"
+
+class Docente(Persona):
+    def __init__(self, dni, nombres, apellidos, cod_docente):
+        super().__init__(dni, nombres, apellidos)
+        self.cod_docente = cod_docente
+
+    def consultar_rol(self):
+        return "Docente"
+
+# ENTIDADES DEL SISTEMA
+class Curso:
+    _autoincremental_id = 1
+
+    def __init__(self, codigo, nombre, creditos, h_teoria, h_practica, h_seminario, h_virtual):
+        # ID generado automáticamente
+        self._id = Curso._autoincremental_id
+        Curso._autoincremental_id += 1
+
+        self._codigo = codigo
+        self.nombre = nombre
+        self.creditos = creditos
+        self.h_teoria = h_teoria
+        self.h_practica = h_practica
+        self.h_seminario = h_seminario
+        self.h_virtual = h_virtual
+
+@property
+    def id(self):
+        return self._id
+
+@property
+    def nombre(self):
+        return self._nombre
+
+@nombre.setter
+    def nombre(self, texto):
+        if not texto or len(texto) > 200:  
+            raise ValueError("El nombre es obligatorio y no puede superar 200 caracteres.")
+        self._nombre = texto
+
+@property
+    def creditos(self):
+        return self._creditos
+
+@creditos.setter
+    def creditos(self, num):
+        if num <= 0:  #
+            raise ValueError("Los créditos deben ser mayores a 0.")
+        self._creditos = round(num, 2)
+
+    def _chequear_horas(self, horas):
+        if horas < 0 or horas > 255:  
+            raise ValueError("Las horas deben estar dentro del rango de 0 a 255.")
+        return horas
+
+@property
+    def h_teoria(self): return self._h_teoria
+@h_teoria.setter
+    def h_teoria(self, val): self._h_teoria = self._chequear_horas(val)
+
+@property
+    def h_practica(self): return self._h_practica
+@h_practica.setter
+    def h_practica(self, val): self._h_practica = self._chequear_horas(val)
+
+@property
+    def h_seminario(self): return self._h_seminario
+@h_seminario.setter
+    def h_seminario(self, val): self._h_seminario = self._chequear_horas(val)
+
+@property
+    def h_virtual(self): return self._h_virtual
+@h_virtual.setter
+    def h_virtual(self, val): self._h_virtual = self._chequear_horas(val)
+
+    # Dato calculado
+    def totalizar_horas(self):
+        return self.h_teoria + self.h_practica + self.h_seminario + self.h_virtual
+
+    def resumen(self):
+        return f"Curso [ID {self.id}]: {self._codigo} - {self.nombre} ({self.creditos} cr.)"
+
+
+class Seccion:
+    def __init__(self, clave_seccion, cod_curso, cod_periodo, cupo_vacantes):
+        self._clave = clave_seccion
+        self._cod_curso = cod_curso
+        self._cod_periodo = cod_periodo
+        self._alumnos_inscritos = 0  
+
+        if cupo_vacantes <= 0:  
+            raise ValueError("Las vacantes deben ser mayores que cero.")
+        self._vacantes = cupo_vacantes
+
+@property
+    def vacantes_libres(self):
+        return self._vacantes - self._alumnos_inscritos
+
+    def registrar_alumno(self):
+        if self.vacantes_libres <= 0:  
+            raise ValueError("Error de Matrícula: La sección no tiene vacantes libres.")
+        self._alumnos_inscritos += 1
+
+    def retirar_alumno(self):
+        if self._alumnos_inscritos <= 0:
+            raise ValueError("Error: No hay alumnos inscritos en la sección.")
+        self._alumnos_inscritos -= 1
+
+
+class PlanEstudio:
+    def __init__(self, nombre, anio, obligatorios, electivos, extracurriculares, estado_vigente):
+        self.nombre = nombre
+        self.anio = anio
+        self.obligatorios = self._validar_creditos(obligatorios)
+        self.electivos = self._validar_creditos(electivos)
+        self.extracurriculares = self._validar_creditos(extracurriculares)
+        self.estado_vigente = estado_vigente  
+
+    def _validar_creditos(self, val):
+        if val < 0:  #[cite: 1]
+            raise ValueError("Los créditos del plan no pueden ser negativos.")
+        return val
+
+@property
+    def nombre(self):
+        return self._nombre
+
+@nombre.setter
+    def nombre(self, texto):
+        if not texto or len(texto) > 36:  
+            raise ValueError("El nombre del plan no puede pasar de 36 caracteres.")
+        self._nombre = texto
+
+@property
+    def es_vigente(self):
+        return self.estado_vigente == 1  
+
+    def suma_creditos(self):
+        return self.obligatorios + self.electivos + self.extracurriculares
+
+    def resumen(self):
+        return f"Plan: {self.nombre} ({self.anio}) - Créditos Totales: {self.suma_creditos()}"
+
+class EscuelaProfesional:
+    def __init__(self, codigo, nombre, info, perfil, cod_director, cod_secretario):
+        self._codigo = codigo
+        self.nombre = nombre
+        self.info = info
+        self.perfil = perfil
+        self.cod_director = cod_director
+        self.cod_secretario = cod_secretario
+
+@property
+    def nombre(self):
+        return self._nombre
+
+@nombre.setter
+    def nombre(self, texto):
+        if not texto or len(texto) > 200:
+            raise ValueError("El nombre de la escuela es inválido.")
+        self._nombre = texto
+
+    def resumen(self):
+        return f"escuela Profesional: [{self._codigo}] {self.nombre}"
+
+
+class PeriodoAcademico:
+    # Diccionario para controlar que los estados solo sean del 1 al 4
+    NOMBRES_ESTADO = {
+        1: "planificado",
+        2: "en curso",
+        3: "matrícula cerrada",
+        4: "finalizado"
+    }
+
+    def __init__(self, nombre, numero, anio, inicio, fin, mat_inicio, mat_fin, es_verano, nota_min, cod_estado):
+        self.nombre = nombre
+        self.numero = numero
+        self.anio = anio
+        self.es_verano = es_verano
+        self.nota_min = nota_min
+        self.cod_estado = cod_estado
+
+        self.f_inicio = inicio
+        self.f_fin = fin
+        if fin < inicio:  
+            raise ValueError("La fecha de fin no puede ser anterior a la de inicio.")
+
+@property
+    def nombre(self):
+        return self._nombre
+
+@nombre.setter
+    def nombre(self, texto):
+        if not texto or len(texto) > 45:  
+            raise ValueError("El nombre del periodo supera los 45 caracteres.")
+        self._nombre = texto
+
+@property
+    def cod_estado(self):
+        return self._cod_estado
+
+@cod_estado.setter
+    def cod_estado(self, valor):
+        if valor not in self.NOMBRES_ESTADO:  
+            raise ValueError(f"Estado {valor} inválido. Debe ser 1, 2, 3 o 4.")
+        self._cod_estado = valor
+
+@property
+    def estado_str(self):
+        return self.NOMBRES_ESTADO[self._cod_estado]
+
+    def resumen(self):
+        return f"Periodo Académico: {self.nombre} ({self.anio}-{self.numero}) - Estado: {self.estado_str}"
+
+    
+# PRUEBAS------------------------------
+# 1. PRUEBA DE CURSO
+print(" 1..Probando la validación de un Curso:")
+
+try:
+    curso_valido = Curso("IS-282", "Programacion OO", 4.0, 20, 20, 10, 10)
+    print(" Curso válido aceptado:", curso_valido.resumen())
+except ValueError as e:
+    print("Error:", e)
+
+try:
+    curso_invalido = Curso("IS-999", "Curso Falso", 3.0, 300, 0, 0, 0)
+except ValueError as e:
+    print(" Dato inválido rechazado con éxito:", e)
+
+# 2. PRUEBA DE SECCIÓN
+print("2..Probando la regla de Vacantes en Sección:")
+
+seccion = Seccion("SEC-1", "IS-282", "2026-I", cupo_vacantes=1)
+
+try:
+    seccion.registrar_alumno()
+    print(" Alumno matriculado correctamente. Libres:", seccion.vacantes_libres)
+except ValueError as e:
+    print(" - Error:", e)
+
+try:
+    seccion.registrar_alumno()
+except ValueError as e:
+    print(" Matrícula rechazada con éxito:", e)
+
+
+# 3. PRUEBA DE PERIODO
+print("3. Probando el Estado del Periodo Académico:")
+
+periodo = PeriodoAcademico("2026-2", 2, 2026, "2026-08-01", "2026-12-15", "2026-07-01", "2026-07-20", 0, 10.5, 1)
+
+try:
+    periodo.cod_estado = 7
+except ValueError as e:
+    print(" Estado 7 rechazado con éxito:", e)
+
+# 4. PRUEBA DE POLIMORFISMO
+print("4. Probando Polimorfismo ")
+
+plan = PlanEstudio("Plan 2026", 2026, 100, 20, 10, estado_vigente=1)
+escuela = EscuelaProfesional("EPIS", "Sistemas", "Info", "Perfil", "D01", "S01")
+
+lista = [curso_valido, plan, escuela, periodo]
+
+for elemento in lista:
+    print(" ", elemento.resumen())
